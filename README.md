@@ -1,9 +1,11 @@
 Simple program to keep track of attendance of people in meetings and flags anyone who misses 3 meeings in a row for further action and can be easily modified to automatically act upon these flagged people.
 
 First time use: start python3 in the working directory, and run the following commands:
-```import registration
+```
+import registration
 data = []
-registration.ChangeRegister(data)```
+registration.ChangeRegister(data)
+```
 and use break instead of the first name to stop adding people.
 
 All further uses should be run as `python3 registration.py`
