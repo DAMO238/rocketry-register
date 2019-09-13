@@ -1,2 +1,5 @@
 # .gitignore
 __pychache__
+credentials.json
+token.pickle
+register
