@@ -11,6 +11,7 @@ from google.auth.transport.requests import Request
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
 
+#TODO: Allow for deleting files to avoiding filling drive up with crap
 
 def authorize():
     """Shows basic usage of the Drive v3 API.
@@ -37,6 +38,25 @@ def authorize():
 
     return build('drive', 'v3', credentials=creds)
 
+def delete_files(filename, mimeType):
+    service = authorize()
+    page_token = None
+    while True:
+        response = service.files().list(q="mimeType='{mimeType}' and name='{filename}'",
+                                              spaces='drive',
+                                              fields='nextPageToken, files(id)',
+                                              pageToken=page_token).execute()
+        for item in response.get('files', []):
+            try:
+                print(item['id'])
+                service.files().delete(item['id']).execute()
+            except:
+                print(f'failed to delete file with id: {id}')
+        page_token = response.get('nextPageToken', None)
+        if page_token is None:
+            break
+
+    
 
 def get_last_10_files():
     service = authorize()

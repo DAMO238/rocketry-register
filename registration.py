@@ -10,13 +10,16 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.fernet import Fernet
 import json
 import driveutils
+import transferutils
 
 NUMBER_OF_WEEKS_TO_FLAG = 3 #consts
 SECRETARY_EMAIL = 'damien31@rocketmail.com' #for facebook
 SECRETARY_PASSWORD = getpass('Input password for facebook: ')
 ROCKETRY_THREAD = '2768832806521279'
-KEY_PASSWORD = getpass('Input encryption key password to begin registration: ')
+KEY_PASSWORD = getpass('Input encryption key password: ')
 SALT = b'\xbd\xcc\x8b>\x85\xe1\xb8\xef\x9d\xd38(A\xad\xfc\x97'
+
+#TODO: Delete extra copies of register on drive to avoid filling it up with crap
 
 def GetMembers():
     client = Client(SECRETARY_EMAIL, SECRETARY_PASSWORD)
@@ -24,6 +27,7 @@ def GetMembers():
     user_list = []
     for user_id in user_id_list:
         user_list.append(client.fetchUserInfo(user_id)[user_id])
+    client.logout()
     return user_list
 
 def CheckRegister(data, human_readable=True):
@@ -86,9 +90,36 @@ def GetKey(password_text):
 KEY = GetKey(KEY_PASSWORD)
 
 def UploadRegister():
+    driveutils.delete_files('register', 'text/plain')
     driveutils.upload_file('register', 'text/plain')
 def DownloadRegister():
     driveutils.download_file(driveutils.get_id('register', 'text/plain'), 'register')
+
+def RemoveMembers(fbids):
+    client = Client(SECRETARY_EMAIL, SECRETARY_PASSWORD)
+    for fbid in fbids:
+        client.removeUserFromGroup(fbid, ROCKETRY_THREAD)
+
+def RemoveAllMembers(users):
+    ids = []
+    for user in users:
+        ids.append(user.uid)
+    RemoveMembers(ids)
+
+def RemoveSomeMembers(users):
+    ids = []
+    for user in users:
+        prompt = None
+        while prompt != 'Y' and prompt != 'N':
+            prompt = input(f'Should I eject {user.name} into space?(Y/N)')
+            if prompt == 'Y':
+                ids.append(user.uid)
+    RemoveMembers(ids)
+   
+def UpdateRemote():
+    transferutils.sendFile(port=2222, username=damo, remote_file_location='python scripts', local_file='register')
+
+ 
 
 if __name__ == '__main__':
     prompt = None
@@ -96,16 +127,39 @@ if __name__ == '__main__':
         prompt = input('Download Register from Drive?(Y/N)')
         if prompt == 'Y':
             DownloadRegister()
+
     reg = ReadRegister()
     ChangeRegister(reg)
-    print(CheckRegister(reg))
+    members = CheckRegister(reg, False)
+
+    if len(members) != 0:
+        print('The following members have missed more than 3 consecutive meetings:')
+        for member in members:
+            print(member.name)
+        prompt = None
+        while prompt != 'none' and prompt != 'some' and prompt != 'all':
+            prompt = input('How many members do you want to eject into space? (all/some/none)')
+            if prompt == 'all':
+                RemoveAllMembers()
+            if prompt == 'some':
+                RemoveSomeMembers()
+    else:
+        print('No members have missed 3 consecutive meetings')
+
     prompt = None
     while prompt != 'Y' and prompt != 'N':
         prompt = input('Write to Disk?(Y/N)')
         if prompt == 'Y':
             WriteRegister()
+
     prompt = None
     while prompt != 'Y' and prompt != 'N':
         prompt = input('Upload Register to Drive?(Y/N)')
         if prompt == 'Y':
             UploadRegister()
+
+    prompt = None
+    while prompt != 'Y' and prompt != 'N':
+        prompt = input('Send Register to Backup?(Y/N)')
+        if prompt == 'Y':
+            UpdateRemote()
