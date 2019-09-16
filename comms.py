@@ -13,7 +13,7 @@ smtp_server = "smtp.gmail.com" #This is the server that gmail uses
 
 dump = {}
 with open('comms.json', 'r') as f:
-    dump = json.load(dump, f)
+    dump = json.load(f)
 
 sender_email = dump['sender_email']
 email_password = dump['email_password']
